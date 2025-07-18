@@ -4,7 +4,7 @@ import * as productRepo from "./product.repo"
 
 export const createProduct = async (req: Request, res: Response) => {
     try {
-        if(req.user.role !== 'admin'){
+        if (req.user.role !== 'admin') {
             throw httpErrors(403, 'You dont have access to add a product')  //mantaining the accebility for admin and customer
         }
         req.body.createdBy = req.user.id  //getting user details from the token/jwt
@@ -33,6 +33,8 @@ export const getProductlist = async (req: Request, res: Response) => {
         filter.page = parseInt(req.query.page as string) || 1
         filter.limit = parseInt(req.query.limit as string) || 10
         filter.skip = (filter.page - 1) * filter.limit
+        filter.search = req.query.search || ""
+
         const products = await productRepo.getProductList(filter)
         res.status(200).json({
             success: true,
@@ -48,12 +50,12 @@ export const getProductlist = async (req: Request, res: Response) => {
 
 export const updateProduct = async (req: Request, res: Response) => {
     try {
-        if(req.user.role !== 'admin'){
+        if (req.user.role !== 'admin') {
             throw httpErrors(403, 'You dont have access to update a product')
         }
         const product = await productRepo.updateProduct(req.query.id as string, req.body)
-        if(!product){
-            return res.status(404).json({message : 'Product not fount'})
+        if (!product) {
+            return res.status(404).json({ message: 'Product not fount' })
         }
         res.status(201).json({ message: 'Product updated succesfully', data: product })
     } catch (err) {
@@ -63,12 +65,12 @@ export const updateProduct = async (req: Request, res: Response) => {
 
 export const deleteProduct = async (req: Request, res: Response) => {
     try {
-        if(req.user.role !== 'admin'){
+        if (req.user.role !== 'admin') {
             throw httpErrors(403, 'You dont have access to delete a product')
         }
         const product = await productRepo.deleteProduct(req.query.id as string)
-        if(!product){
-            return res.status(404).json({message : 'Product not fount'})
+        if (!product) {
+            return res.status(404).json({ message: 'Product not fount' })
         }
         res.status(201).json({ message: 'Product deleted succesfully', data: product })
     } catch (err) {

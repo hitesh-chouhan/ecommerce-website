@@ -24,7 +24,16 @@ export const getProductById = async (id: string): Promise<any> => {
 //to get product list
 export const getProductList = async (filter: any): Promise<any> => {
     const result = {} as any
-    result.list = await productModel.find().skip(filter.skip).limit(filter.limit) //fetching pagignation data
+
+    const searchCondition: any = {};
+    if (filter.search) {
+        searchCondition.$or = [
+            { name: { $regex: filter.search, $options: 'i' } },
+            { category: { $regex: filter.search, $options: 'i' } }
+        ];
+    }
+
+    result.list = await productModel.find(searchCondition).skip(filter.skip).limit(filter.limit)  //fetching pagination data
     result.totalProducts = await productModel.countDocuments(); //fetching total number of documents
     result.count = result.list.length 
     return result
