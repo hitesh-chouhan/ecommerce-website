@@ -27,8 +27,10 @@ export const register = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
     try {
         const user = await userRepo.findByEmail(req.body.email)
-        console.log(req.body.password || !(await bcrypt.compare(req.body.password, user.password)))
-        if (!user ) {
+        if (!user) {
+            return res.status(401).json({ message: 'user not exist' })
+        }
+        if (!(await bcrypt.compare(req.body.password, user.password))) {
             return res.status(401).json({ message: 'Invalid credentials' })
         }
         user.token = await createToken({

@@ -1,7 +1,6 @@
 import { orderModel } from "./order.model";
 
 export const createOrder = async (body): Promise<any> => {
-    console.log(body)
     const user = await new orderModel(body).save()
     return user
 }

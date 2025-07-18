@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>E-commerce Frontend</title>
+  </head>
+  <body>
+    <h1>E-commerce API Frontend</h1>
+
+    <!-- Login -->
+    <h2>Login</h2>
+    <form id="loginForm">
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+    <p id="loginStatus"></p>
+
+    <hr />
+
+    <!-- Product Search -->
+    <h2>Product List</h2>
+    <input type="text" id="search" placeholder="Search by name or category" />
+    <button onclick="fetchProducts()">Search</button>
+    <ul id="productList"></ul>
+
+    <hr />
+
+    <!-- Cart -->
+    <h2>Cart</h2>
+    <ul id="cartList"></ul>
+    <button onclick="placeOrder()">Place Order</button>
+    <p id="orderStatus"></p>
+
+    <script>
+      let token = "";
+
+      // Login
+      document.getElementById("loginForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        try {
+          const res = await fetch("http://localhost:5000/user/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+
+          const data = await res.json();
+          if (res.ok && data.user.token) {
+            token = data.user.token;
+            document.getElementById("loginStatus").innerText = "Login successful!";
+            fetchProducts();
+            fetchCart(); // Load cart after login
+          } else {
+            document.getElementById("loginStatus").innerText = data.message || "Login failed!";
+          }
+        } catch (err) {
+          console.error(err);
+          document.getElementById("loginStatus").innerText = "Login error!";
+        }
+      });
+
+      // Fetch Products
+      async function fetchProducts() {
+        const search = document.getElementById("search").value;
+        const url = new URL("http://localhost:5000/product/list");
+        url.searchParams.append("page", "1");
+        url.searchParams.append("limit", "10");
+        if (search) url.searchParams.append("search", search);
+
+        try {
+          const res = await fetch(url, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const data = await res.json();
+          const list = document.getElementById("productList");
+          list.innerHTML = "";
+
+          data.data.forEach((product) => {
+            const li = document.createElement("li");
+            li.innerHTML = `
+              ${product.name} - ₹${product.price} (${product.category})
+              <button onclick='addToCart("${product._id}")'>Add to Cart</button>
+            `;
+            list.appendChild(li);
+          });
+        } catch (err) {
+          alert("Failed to fetch products");
+        }
+      }
+
+      // Add to Cart (Hitting /cart/add API)
+      async function addToCart(productId) {
+        try {
+          const res = await fetch("http://localhost:5000/cart/add", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ productId, quantity: 1 }),
+          });
+
+          const data = await res.json();
+          if (res.ok) {
+            alert("Item added to cart!");
+            fetchCart(); // Reload cart after addition
+          } else {
+            alert(data.message || "Failed to add to cart");
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Error adding to cart");
+        }
+      }
+
+      // Fetch Cart
+      // Fetch Cart
+async function fetchCart() {
+  try {
+    const res = await fetch("http://localhost:5000/cart", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await res.json();
+    const list = document.getElementById("cartList");
+    list.innerHTML = "";
+
+    // Loop over items
+    for (const item of data.data.items) {
+      try {
+        const productRes = await fetch(`http://localhost:5000/product/single/?id=${item.productId}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const productData = await productRes.json();
+        const product = productData.data;
+
+        const li = document.createElement("li");
+        li.textContent = `${product.name} - ₹${product.price} x ${item.quantity}`;
+        list.appendChild(li);
+      } catch (err) {
+        console.error("Failed to fetch product details for ID:", item.productId);
+      }
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Failed to load cart");
+  }
+}
+
+      // Place Order
+      async function placeOrder() {
+        try {
+          const res = await fetch("http://localhost:5000/order/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const data = await res.json();
+          if (res.ok) {
+            document.getElementById("orderStatus").innerText = "Order placed successfully!";
+            fetchCart(); // Reload cart
+          } else {
+            document.getElementById("orderStatus").innerText = data.message || "Failed to place order";
+          }
+        } catch (err) {
+          console.error(err);
+          document.getElementById("orderStatus").innerText = "Order error!";
+        }
+      }
+    </script>
+  </body>
+</html>
