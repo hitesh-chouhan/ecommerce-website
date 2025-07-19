@@ -2,6 +2,10 @@
 
 This project is a basic e-commerce backend API built with **Node.js**, **Express**, and **MongoDB**, along with a simple **HTML + JavaScript frontend**.
 
+*Temorary email password for frontend
+email:- hitesh47865@gmail.com
+pass:- 12345
+
 It supports:
 - User Authentication (Login/Register with JWT)
 - Product Listing
